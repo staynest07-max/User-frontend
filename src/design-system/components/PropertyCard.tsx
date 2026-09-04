@@ -10,12 +10,28 @@ import Animated, {
 import { colors, radius, spacing, elevation, motion } from '../tokens';
 import { Text, PriceText } from './Text';
 import { Button } from './Button';
-import type { Property } from '../../types';
+
+export interface PropertyCardModel {
+  id: string;
+  name: string;
+  area: string;
+  city: string;
+  coverImage: string | null;
+  startingRent: number | null;
+  amenities: string[];
+  roomTypeLabels?: string[];
+  sharingTypes?: string[];
+  availableBeds?: number;
+  verified?: boolean;
+  rating?: number;
+  matchScore?: number;
+  distanceKm?: number;
+}
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface PropertyCardProps {
-  property: Property;
+  property: PropertyCardModel;
   saved?: boolean;
   onPress?: () => void;
   onToggleSave?: () => void;
@@ -51,7 +67,7 @@ export function PropertyCard({
     >
       <View style={styles.imageWrap}>
         <Image
-          source={{ uri: property.coverImage }}
+          source={property.coverImage ? { uri: property.coverImage } : undefined}
           style={styles.image}
           contentFit="cover"
           transition={320}
@@ -65,7 +81,7 @@ export function PropertyCard({
               </Text>
             </View>
           ) : null}
-          <Pressable
+          {onToggleSave ? <Pressable
             onPress={(e) => {
               e.stopPropagation?.();
               onToggleSave?.();
@@ -81,7 +97,7 @@ export function PropertyCard({
               fill={saved ? colors.favorite : 'transparent'}
               strokeWidth={2}
             />
-          </Pressable>
+          </Pressable> : null}
         </View>
         {property.matchScore ? (
           <View style={styles.match}>
@@ -97,12 +113,12 @@ export function PropertyCard({
           <Text variant="h4" numberOfLines={1} style={{ flex: 1 }}>
             {property.name}
           </Text>
-          <View style={styles.rating}>
+          {property.rating != null ? <View style={styles.rating}>
             <Star size={14} color={colors.rating} fill={colors.rating} strokeWidth={0} />
             <Text variant="captionMedium" style={{ marginLeft: 4 }}>
               {property.rating.toFixed(1)}
             </Text>
-          </View>
+          </View> : null}
         </View>
 
         <View style={styles.locRow}>
@@ -114,7 +130,7 @@ export function PropertyCard({
         </View>
 
         <View style={styles.chips}>
-          {property.sharingTypes.slice(0, 3).map((s) => (
+          {(property.roomTypeLabels ?? property.sharingTypes ?? []).slice(0, 3).map((s) => (
             <View key={s} style={styles.chip}>
               <Text variant="small" color={colors.textSecondary}>
                 {s}
@@ -135,7 +151,7 @@ export function PropertyCard({
             <Text variant="small" color={colors.textTertiary}>
               From
             </Text>
-            <PriceText amount={property.startingRent} />
+            <PriceText amount={property.startingRent ?? 0} />
           </View>
           {!compact ? (
             <View style={styles.actions}>
@@ -146,13 +162,15 @@ export function PropertyCard({
                 onPress={onPress}
                 style={{ minHeight: 40, paddingHorizontal: 14 }}
               />
-              <Button
-                title="Book Visit"
-                variant="primary"
-                size="sm"
-                onPress={onBookVisit}
-                style={{ minHeight: 40, paddingHorizontal: 14 }}
-              />
+              {onBookVisit ? (
+                <Button
+                  title="Book Visit"
+                  variant="primary"
+                  size="sm"
+                  onPress={onBookVisit}
+                  style={{ minHeight: 40, paddingHorizontal: 14 }}
+                />
+              ) : null}
             </View>
           ) : null}
         </View>

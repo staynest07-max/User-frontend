@@ -1,22 +1,12 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { UserPreferences, UserRole } from '../types';
+import type { UserPreferences } from '../types';
 import { properties as allProperties } from '../data/mock';
 
 interface AppState {
   hydrated: boolean;
   setHydrated: (v: boolean) => void;
-
-  role: UserRole;
-  setRole: (role: UserRole) => void;
-
-  isAuthenticated: boolean;
-  phone: string;
-  name: string;
-  setAuth: (phone: string, name?: string) => void;
-  logout: () => void;
-  continueAsGuest: () => void;
 
   onboardingComplete: boolean;
   completeOnboarding: () => void;
@@ -37,6 +27,9 @@ interface AppState {
   setSearchQuery: (q: string) => void;
 
   filters: {
+    city: string;
+    locality: string;
+    roomType: string;
     rentMin: number;
     rentMax: number;
     pgType: string[];
@@ -61,8 +54,11 @@ const defaultPreferences: UserPreferences = {
 };
 
 const defaultFilters: AppState['filters'] = {
+  city: '',
+  locality: '',
+  roomType: '',
   rentMin: 0,
-  rentMax: 50000,
+  rentMax: 0,
   pgType: [],
   sharing: [],
   amenities: [],
@@ -76,23 +72,6 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
       hydrated: false,
       setHydrated: (v) => set({ hydrated: v }),
-
-      role: 'guest',
-      setRole: (role) => set({ role }),
-
-      isAuthenticated: false,
-      phone: '',
-      name: '',
-      setAuth: (phone, name = 'Guest') =>
-        set({ isAuthenticated: true, phone, name, role: get().role === 'guest' ? 'user' : get().role }),
-      logout: () =>
-        set({
-          isAuthenticated: false,
-          phone: '',
-          name: '',
-          role: 'guest',
-        }),
-      continueAsGuest: () => set({ role: 'guest', isAuthenticated: false }),
 
       onboardingComplete: false,
       completeOnboarding: () => set({ onboardingComplete: true }),
@@ -145,8 +124,8 @@ export const useAppStore = create<AppState>()(
           list = list.filter((p) => p.city === preferences.city || !preferences.city);
         }
 
-        list = list.filter(
-          (p) => p.startingRent >= filters.rentMin && p.startingRent <= filters.rentMax
+        list = list.filter((p) =>
+          p.startingRent >= filters.rentMin && (!filters.rentMax || p.startingRent <= filters.rentMax)
         );
 
         if (filters.pgType.length) {
@@ -194,10 +173,6 @@ export const useAppStore = create<AppState>()(
         preferences: s.preferences,
         savedIds: s.savedIds,
         recentlyViewed: s.recentlyViewed,
-        isAuthenticated: s.isAuthenticated,
-        phone: s.phone,
-        name: s.name,
-        role: s.role,
         locationGranted: s.locationGranted,
       }),
       onRehydrateStorage: () => (state) => {

@@ -3,133 +3,92 @@ import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
-import { Text, Button, Chip, colors, spacing } from '@/design-system';
+import { Text, Button, Chip, Input, colors, spacing } from '@/design-system';
 import { useAppStore } from '@/stores/appStore';
-import { amenityOptions } from '@/data/mock';
+import { publicAmenityOptions, publicRoomTypeOptions } from '@/features/publicPgs/filterOptions';
 
 export default function FiltersScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const filters = useAppStore((s) => s.filters);
-  const setFilters = useAppStore((s) => s.setFilters);
-  const resetFilters = useAppStore((s) => s.resetFilters);
+  const filters = useAppStore((state) => state.filters);
+  const setFilters = useAppStore((state) => state.setFilters);
+  const resetFilters = useAppStore((state) => state.resetFilters);
 
-  const toggleArr = (key: 'pgType' | 'sharing' | 'amenities', value: string) => {
-    const arr = filters[key];
+  const toggleAmenity = (value: string) => {
     setFilters({
-      [key]: arr.includes(value) ? arr.filter((x) => x !== value) : [...arr, value],
+      amenities: filters.amenities.includes(value)
+        ? filters.amenities.filter((item) => item !== value)
+        : [...filters.amenities, value],
     });
   };
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.back}>
+        <Pressable onPress={() => router.back()} style={styles.back} accessibilityLabel="Back">
           <ArrowLeft size={22} color={colors.textPrimary} strokeWidth={2} />
         </Pressable>
         <Text variant="h3">Filters</Text>
         <Pressable onPress={resetFilters}>
-          <Text variant="captionMedium" color={colors.primaryDark}>
-            Reset
-          </Text>
+          <Text variant="captionMedium" color={colors.primaryDark}>Reset</Text>
         </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: spacing['2xl'], paddingBottom: 120 }}>
-        <Text variant="h4">Monthly rent</Text>
+        <Input
+          label="City"
+          placeholder="For example, Hyderabad"
+          value={filters.city}
+          onChangeText={(city) => setFilters({ city })}
+          autoCapitalize="words"
+        />
+        <Input
+          label="Locality"
+          placeholder="For example, Madhapur"
+          value={filters.locality}
+          onChangeText={(locality) => setFilters({ locality })}
+          autoCapitalize="words"
+          style={styles.fieldGap}
+        />
+
+        <Text variant="h4" style={styles.section}>Monthly rent</Text>
         <View style={styles.wrap}>
           {[
-            { label: 'Any', min: 0, max: 50000 },
-            { label: 'Under 8k', min: 0, max: 8000 },
-            { label: '8–12k', min: 8000, max: 12000 },
-            { label: '12–18k', min: 12000, max: 18000 },
-            { label: '18k+', min: 18000, max: 50000 },
-          ].map((b) => (
+            { label: 'Any', min: 0, max: 0 },
+            { label: 'Under ₹8k', min: 0, max: 8000 },
+            { label: '₹8–12k', min: 8000, max: 12000 },
+            { label: '₹12–18k', min: 12000, max: 18000 },
+            { label: '₹18k+', min: 18000, max: 0 },
+          ].map((range) => (
             <Chip
-              key={b.label}
-              label={b.label}
-              selected={filters.rentMin === b.min && filters.rentMax === b.max}
-              onPress={() => setFilters({ rentMin: b.min, rentMax: b.max })}
+              key={range.label}
+              label={range.label}
+              selected={filters.rentMin === range.min && filters.rentMax === range.max}
+              onPress={() => setFilters({ rentMin: range.min, rentMax: range.max })}
             />
           ))}
         </View>
 
-        <Text variant="h4" style={styles.section}>
-          PG type
-        </Text>
+        <Text variant="h4" style={styles.section}>Room type</Text>
         <View style={styles.wrap}>
-          {['women', 'men', 'coliving', 'hostel', 'family'].map((t) => (
+          {publicRoomTypeOptions.map((roomType) => (
             <Chip
-              key={t}
-              label={t}
-              selected={filters.pgType.includes(t)}
-              onPress={() => toggleArr('pgType', t)}
+              key={roomType}
+              label={roomType}
+              selected={filters.roomType === roomType}
+              onPress={() => setFilters({ roomType: filters.roomType === roomType ? '' : roomType })}
             />
           ))}
         </View>
 
-        <Text variant="h4" style={styles.section}>
-          Sharing
-        </Text>
+        <Text variant="h4" style={styles.section}>Amenities</Text>
         <View style={styles.wrap}>
-          {['private', '2-sharing', '3-sharing', '4-sharing', 'dormitory'].map((t) => (
+          {publicAmenityOptions.map((amenity) => (
             <Chip
-              key={t}
-              label={t}
-              selected={filters.sharing.includes(t)}
-              onPress={() => toggleArr('sharing', t)}
-            />
-          ))}
-        </View>
-
-        <Text variant="h4" style={styles.section}>
-          Amenities
-        </Text>
-        <View style={styles.wrap}>
-          {amenityOptions.map((a) => (
-            <Chip
-              key={a}
-              label={a}
-              selected={filters.amenities.includes(a)}
-              onPress={() => toggleArr('amenities', a)}
-            />
-          ))}
-        </View>
-
-        <Text variant="h4" style={styles.section}>
-          More
-        </Text>
-        <View style={styles.wrap}>
-          <Chip
-            label="Food included"
-            selected={filters.foodIncluded}
-            onPress={() => setFilters({ foodIncluded: !filters.foodIncluded })}
-          />
-          <Chip
-            label="Verified only"
-            selected={filters.verifiedOnly}
-            onPress={() => setFilters({ verifiedOnly: !filters.verifiedOnly })}
-          />
-        </View>
-
-        <Text variant="h4" style={styles.section}>
-          Sort by
-        </Text>
-        <View style={styles.wrap}>
-          {(
-            [
-              ['relevance', 'Relevance'],
-              ['rent', 'Rent'],
-              ['distance', 'Distance'],
-              ['rating', 'Rating'],
-              ['newest', 'Newest'],
-            ] as const
-          ).map(([value, label]) => (
-            <Chip
-              key={value}
-              label={label}
-              selected={filters.sortBy === value}
-              onPress={() => setFilters({ sortBy: value })}
+              key={amenity}
+              label={amenity}
+              selected={filters.amenities.includes(amenity)}
+              onPress={() => toggleAmenity(amenity)}
             />
           ))}
         </View>
@@ -140,7 +99,10 @@ export default function FiltersScreen() {
           title="Show homes"
           fullWidth
           size="lg"
-          onPress={() => router.push('/(user)/search-results')}
+          onPress={() => {
+            useAppStore.getState().setSearchQuery('');
+            router.replace('/(user)/search-results');
+          }}
         />
       </View>
     </View>
@@ -150,18 +112,12 @@ export default function FiltersScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
   },
   back: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  fieldGap: { marginTop: spacing.md },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', marginTop: spacing.md },
   section: { marginTop: spacing['2xl'] },
-  footer: {
-    paddingHorizontal: spacing['2xl'],
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
+  footer: { paddingHorizontal: spacing['2xl'], paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border },
 });
