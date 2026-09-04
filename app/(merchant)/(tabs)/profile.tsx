@@ -1,14 +1,10 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Text, Button, Badge, colors, spacing, radius, elevation } from '@/design-system';
-import { useAppStore } from '@/stores/appStore';
+import { Text, Badge, colors, spacing, radius, elevation } from '@/design-system';
 
 export default function MerchantProfile() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { name, phone, setRole, logout } = useAppStore();
 
   return (
     <ScrollView
@@ -21,9 +17,9 @@ export default function MerchantProfile() {
     >
       <Text variant="h2">Owner profile</Text>
       <View style={[styles.card, elevation.soft, { marginTop: spacing.xl }]}>
-        <Text variant="h4">{name || 'Ananya Desai'}</Text>
+        <Text variant="h4">Ananya Desai</Text>
         <Text variant="caption" color={colors.textSecondary}>
-          +91 {phone || '9876543210'}
+          +91 9876543210
         </Text>
         <View style={{ marginTop: spacing.md }}>
           <Badge label="Identity verified" tone="success" />
@@ -37,26 +33,6 @@ export default function MerchantProfile() {
         </Text>
       </View>
 
-      <View style={{ marginTop: spacing.xl, gap: spacing.sm }}>
-        <Button
-          title="Switch to seeker app"
-          variant="outline"
-          fullWidth
-          onPress={() => {
-            setRole('user');
-            router.replace('/(user)/(tabs)');
-          }}
-        />
-        <Button
-          title="Sign out"
-          variant="ghost"
-          fullWidth
-          onPress={() => {
-            logout();
-            router.replace('/(onboarding)/welcome');
-          }}
-        />
-      </View>
     </ScrollView>
   );
 }

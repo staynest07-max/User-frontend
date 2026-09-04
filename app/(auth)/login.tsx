@@ -3,15 +3,25 @@ import { View, StyleSheet, KeyboardAvoidingView, Platform, Pressable } from 'rea
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, Button, Input, colors, spacing } from '@/design-system';
-import { useAppStore } from '@/stores/appStore';
+import { useRequestOtp } from '@/features/auth/hooks/useAuth';
+import { authErrorMessage } from '@/features/auth/errors';
+import { isValidIndianPhone, normalizeIndianPhone } from '@/features/auth/validation';
 
 export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [phone, setPhone] = useState('');
-  const role = useAppStore((s) => s.role);
+  const requestOtp = useRequestOtp();
 
-  const valid = phone.replace(/\D/g, '').length === 10;
+  const valid = isValidIndianPhone(phone);
+
+  const submit = () => {
+    if (!valid || requestOtp.isPending) return;
+    const normalizedPhone = normalizeIndianPhone(phone);
+    requestOtp.mutate(normalizedPhone, {
+      onSuccess: () => router.push({ pathname: '/(auth)/otp', params: { phone: normalizedPhone } }),
+    });
+  };
 
   return (
     <KeyboardAvoidingView
@@ -22,7 +32,7 @@ export default function LoginScreen() {
         STAYNEST
       </Text>
       <Text variant="h1" style={{ marginTop: spacing.sm }}>
-        {role === 'merchant' ? 'Owner sign in' : 'Welcome back'}
+        Welcome back
       </Text>
       <Text variant="body" color={colors.textSecondary} style={{ marginTop: spacing.md }}>
         Sign in with your mobile number. We’ll send a one-time code.
@@ -35,7 +45,12 @@ export default function LoginScreen() {
           keyboardType="phone-pad"
           maxLength={10}
           value={phone}
-          onChangeText={setPhone}
+          onChangeText={(value) => {
+            setPhone(value.replace(/\D/g, '').slice(0, 10));
+            requestOtp.reset();
+          }}
+          error={requestOtp.error ? authErrorMessage(requestOtp.error) : undefined}
+          editable={!requestOtp.isPending}
           leftIcon={<Text variant="bodyMedium">+91</Text>}
         />
       </View>
@@ -46,30 +61,12 @@ export default function LoginScreen() {
         title="Send OTP"
         fullWidth
         size="lg"
-        disabled={!valid}
-        onPress={() => router.push({ pathname: '/(auth)/otp', params: { phone } })}
+        disabled={!valid || requestOtp.isPending}
+        loading={requestOtp.isPending}
+        onPress={submit}
         style={{ marginBottom: spacing.sm }}
       />
-      <Button
-        title="Continue as guest"
-        variant="ghost"
-        fullWidth
-        onPress={() => {
-          useAppStore.getState().continueAsGuest();
-          useAppStore.getState().completeOnboarding();
-          router.replace('/(user)/(tabs)');
-        }}
-      />
-      <Pressable
-        onPress={() => {
-          useAppStore.getState().setRole(role === 'merchant' ? 'user' : 'merchant');
-        }}
-        style={{ alignItems: 'center', padding: spacing.md, marginBottom: insets.bottom }}
-      >
-        <Text variant="caption" color={colors.textSecondary}>
-          {role === 'merchant' ? 'Looking for a PG? Switch to seeker' : 'Own a PG? Switch to owner login'}
-        </Text>
-      </Pressable>
+      <View style={{ height: insets.bottom + spacing.lg }} />
     </KeyboardAvoidingView>
   );
 }

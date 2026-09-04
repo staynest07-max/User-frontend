@@ -13,11 +13,12 @@ import {
   Shield,
 } from 'lucide-react-native';
 import { Text, Button, colors, spacing, radius, elevation } from '@/design-system';
-import { useAppStore } from '@/stores/appStore';
+import { useAuthSessionStore } from '@/stores/authSessionStore';
+import { useCurrentUser, useLogout } from '@/features/auth/hooks/useAuth';
 
 const rows = [
   { icon: SlidersHorizontal, label: 'Preferences', href: '/(user)/preferences-edit' },
-  { icon: MessageCircle, label: 'Messages', href: '/(user)/messages' },
+  { icon: MessageCircle, label: 'My enquiries', href: '/(user)/enquiries' },
   { icon: Bell, label: 'Notifications', href: '/(user)/notifications' },
   { icon: Settings, label: 'Settings', href: '/(user)/settings' },
   { icon: HelpCircle, label: 'Help & support', href: '/(user)/help' },
@@ -27,7 +28,9 @@ const rows = [
 export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { name, phone, isAuthenticated, logout, setRole } = useAppStore();
+  const principal = useAuthSessionStore((state) => state.principal);
+  useCurrentUser();
+  const logout = useLogout();
 
   return (
     <ScrollView
@@ -43,25 +46,16 @@ export default function ProfileScreen() {
       <View style={[styles.card, elevation.soft, { marginTop: spacing.xl }]}>
         <View style={styles.avatar}>
           <Text variant="h3" color={colors.primaryDark}>
-            {(name || 'G').charAt(0)}
+            U
           </Text>
         </View>
         <View style={{ flex: 1 }}>
-          <Text variant="h4">{isAuthenticated ? name : 'Guest'}</Text>
+          <Text variant="h4">StayNest user</Text>
           <Text variant="caption" color={colors.textSecondary}>
-            {isAuthenticated ? `+91 ${phone}` : 'Browsing without an account'}
+            {principal ? 'Signed in securely' : 'Session unavailable'}
           </Text>
         </View>
       </View>
-
-      {!isAuthenticated ? (
-        <Button
-          title="Sign in with OTP"
-          fullWidth
-          style={{ marginTop: spacing.lg }}
-          onPress={() => router.push('/(auth)/login')}
-        />
-      ) : null}
 
       <View style={[styles.menu, elevation.soft, { marginTop: spacing.xl }]}>
         {rows.map((r, i) => (
@@ -81,36 +75,16 @@ export default function ProfileScreen() {
 
       <View style={{ marginTop: spacing.xl, gap: spacing.sm }}>
         <Button
-          title="Switch to owner dashboard"
-          variant="outline"
-          fullWidth
-          onPress={() => {
-            setRole('merchant');
-            router.replace('/(merchant)/(tabs)');
-          }}
-        />
-        <Button
-          title="Switch to admin"
+          title="Sign out"
           variant="ghost"
           fullWidth
-          onPress={() => {
-            setRole('admin');
-            router.replace('/(admin)/(tabs)');
-          }}
+          loading={logout.isPending}
+          leftIcon={<LogOut size={18} color={colors.error} strokeWidth={2} />}
+          onPress={() => logout.mutate(undefined, {
+            onSettled: () => router.replace('/(onboarding)/welcome'),
+          })}
+          style={{ marginTop: spacing.sm }}
         />
-        {isAuthenticated ? (
-          <Button
-            title="Sign out"
-            variant="ghost"
-            fullWidth
-            leftIcon={<LogOut size={18} color={colors.error} strokeWidth={2} />}
-            onPress={() => {
-              logout();
-              router.replace('/(onboarding)/welcome');
-            }}
-            style={{ marginTop: spacing.sm }}
-          />
-        ) : null}
       </View>
     </ScrollView>
   );

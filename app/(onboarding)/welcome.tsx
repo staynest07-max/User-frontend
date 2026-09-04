@@ -12,7 +12,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, Button, colors, spacing, radius } from '@/design-system';
-import { useAppStore } from '@/stores/appStore';
+import { useAuthSessionStore } from '@/stores/authSessionStore';
 
 const { width } = Dimensions.get('window');
 
@@ -42,7 +42,7 @@ export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
   const [index, setIndex] = React.useState(0);
   const listRef = useRef<FlatList>(null);
-  const setRole = useAppStore((s) => s.setRole);
+  const sessionError = useAuthSessionStore((state) => state.error);
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const i = Math.round(e.nativeEvent.contentOffset.x / width);
@@ -90,6 +90,11 @@ export default function WelcomeScreen() {
       </View>
 
       <View style={[styles.actions, { paddingHorizontal: spacing['2xl'] }]}>
+        {sessionError ? (
+          <Text variant="small" color={colors.error} style={{ textAlign: 'center' }} accessibilityRole="alert">
+            {sessionError}
+          </Text>
+        ) : null}
         <Button
           title={index < slides.length - 1 ? 'Continue' : 'Get started'}
           fullWidth
@@ -98,27 +103,8 @@ export default function WelcomeScreen() {
             if (index < slides.length - 1) {
               listRef.current?.scrollToIndex({ index: index + 1, animated: true });
             } else {
-              router.push('/(onboarding)/preferences');
+              router.push('/(auth)/login');
             }
-          }}
-        />
-        <Button
-          title="Continue as guest"
-          variant="ghost"
-          fullWidth
-          onPress={() => {
-            useAppStore.getState().continueAsGuest();
-            useAppStore.getState().completeOnboarding();
-            router.replace('/(user)/(tabs)');
-          }}
-        />
-        <Button
-          title="I’m a PG owner"
-          variant="outline"
-          fullWidth
-          onPress={() => {
-            setRole('merchant');
-            router.push('/(auth)/login');
           }}
         />
       </View>

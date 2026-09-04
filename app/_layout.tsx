@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Text as NativeText } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
@@ -22,6 +22,10 @@ import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { colors } from '@/design-system';
 import { useAppStore } from '@/stores/appStore';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '@/query/client';
+import { useAuthSessionStore } from '@/stores/authSessionStore';
+import { useInitializeAuth } from '@/features/auth/hooks/useAuth';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
@@ -29,46 +33,34 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const segments = useSegments();
   const hydrated = useAppStore((s) => s.hydrated);
-  const onboardingComplete = useAppStore((s) => s.onboardingComplete);
-  const role = useAppStore((s) => s.role);
+  const authStatus = useAuthSessionStore((s) => s.status);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || authStatus === 'initializing') return;
 
     const root = segments[0];
 
-    if (!onboardingComplete) {
-      if (root !== '(onboarding)' && root !== '(auth)') {
-        router.replace('/(onboarding)/welcome');
-      }
+    if (authStatus === 'unauthenticated') {
+      const isWelcome = root === '(onboarding)' && segments[1] === 'welcome';
+      if (!isWelcome && root !== '(auth)') router.replace('/(onboarding)/welcome');
       return;
     }
 
-    if (role === 'merchant') {
-      if (root !== '(merchant)' && root !== '(auth)' && root !== '(user)') {
-        router.replace('/(merchant)/(tabs)');
-      }
-      return;
-    }
-
-    if (role === 'admin') {
-      if (root !== '(admin)' && root !== '(auth)') {
-        router.replace('/(admin)/(tabs)');
-      }
-      return;
-    }
-
-    // user / guest — leave stack screens alone once inside the seeker app
-    if (root === '(onboarding)' || !root) {
+    // This client supports USER and guest navigation only. Authentication will
+    // derive the authoritative role from the backend principal.
+    if (root === '(merchant)' || root === '(admin)' || root === '(auth)' || root === '(onboarding)' || !root) {
       router.replace('/(user)/(tabs)');
     }
-  }, [hydrated, onboardingComplete, role, segments, router]);
+  }, [authStatus, hydrated, segments, router]);
 
   return <>{children}</>;
 }
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
+  useInitializeAuth();
+  const hydrated = useAppStore((s) => s.hydrated);
+  const authStatus = useAuthSessionStore((s) => s.status);
+  const [fontsLoaded, fontError] = useFonts({
     Sora_500Medium,
     Sora_600SemiBold,
     Sora_700Bold,
@@ -81,12 +73,12 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (fontsLoaded) {
+    if (fontsLoaded || fontError) {
       SplashScreen.hideAsync().catch(() => undefined);
     }
-  }, [fontsLoaded]);
+  }, [fontError, fontsLoaded]);
 
-  if (!fontsLoaded) {
+  if ((!fontsLoaded && !fontError) || !hydrated || authStatus === 'initializing') {
     return (
       <View style={styles.boot}>
         <ActivityIndicator color={colors.primary} size="large" />
@@ -95,19 +87,28 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <StatusBar style="dark" />
-      <AuthGate>
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(onboarding)" />
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(user)" />
-          <Stack.Screen name="(merchant)" />
-          <Stack.Screen name="(admin)" />
-        </Stack>
-      </AuthGate>
-    </GestureHandlerRootView>
+    <QueryClientProvider client={queryClient}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <StatusBar style="dark" />
+        {fontError ? (
+          <View style={styles.fontWarning} accessibilityRole="alert">
+            <NativeText style={styles.fontWarningText}>
+              Custom fonts could not be loaded. Using system fonts.
+            </NativeText>
+          </View>
+        ) : null}
+        <AuthGate>
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(onboarding)" />
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(user)" />
+            <Stack.Screen name="(merchant)" />
+            <Stack.Screen name="(admin)" />
+          </Stack>
+        </AuthGate>
+      </GestureHandlerRootView>
+    </QueryClientProvider>
   );
 }
 
@@ -117,5 +118,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.background,
+  },
+  fontWarning: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 10,
+    padding: 8,
+    backgroundColor: colors.warningLight,
+  },
+  fontWarningText: {
+    color: colors.textPrimary,
+    textAlign: 'center',
+    fontSize: 12,
   },
 });

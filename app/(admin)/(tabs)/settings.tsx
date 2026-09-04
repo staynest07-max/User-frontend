@@ -1,14 +1,10 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Text, Button, colors, spacing, radius, elevation } from '@/design-system';
-import { useAppStore } from '@/stores/appStore';
+import { Text, colors, spacing, radius, elevation } from '@/design-system';
 
 export default function AdminSettings() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
-  const setRole = useAppStore((s) => s.setRole);
 
   return (
     <ScrollView
@@ -38,16 +34,6 @@ export default function AdminSettings() {
           Send platform or city-level messages to seekers and owners.
         </Text>
       </View>
-      <Button
-        title="Exit to seeker app"
-        variant="outline"
-        fullWidth
-        style={{ marginTop: spacing.xl }}
-        onPress={() => {
-          setRole('user');
-          router.replace('/(user)/(tabs)');
-        }}
-      />
     </ScrollView>
   );
 }
