@@ -32,6 +32,8 @@ jobs:
         run: npm ci
 
       - name: Export Expo web app
+        env:
+          EXPO_PUBLIC_API_BASE_URL: https://licenses-queens-old-nascar.trycloudflare.com
         run: npx expo export --platform web
 
       - name: Setup Pages
