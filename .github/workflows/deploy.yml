@@ -33,7 +33,7 @@ jobs:
 
       - name: Export Expo web app
         env:
-          EXPO_PUBLIC_API_BASE_URL: https://licenses-queens-old-nascar.trycloudflare.com
+          EXPO_PUBLIC_API_BASE_URL: https://licenses-queens-old-nascar.trycloudflare.com/api/v1
         run: npx expo export --platform web
 
       - name: Setup Pages
