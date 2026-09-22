@@ -35,8 +35,8 @@ jobs:
         env:
           EXPO_PUBLIC_API_BASE_URL: https://backend-bk0a.onrender.com/api/v1
         run: npx expo export --platform web
-          EXPO_PUBLIC_API_BASE_URL: https://backend-bk0a.onrender.com/api/v1
-     - name: Setup Pages
+
+      - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
