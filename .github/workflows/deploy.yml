@@ -34,7 +34,11 @@ jobs:
       - name: Export Expo web app
         env:
           EXPO_PUBLIC_API_BASE_URL: https://backend-bk0a.onrender.com/api/v1
-        run: npx expo export --platform web
+        run: |
+          npx expo export --platform web
+          # GitHub Pages/Jekyll ignores _expo folders unless this file exists.
+          touch dist/.nojekyll
+          cp dist/index.html dist/404.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
