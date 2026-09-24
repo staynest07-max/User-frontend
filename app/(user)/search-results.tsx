@@ -24,8 +24,16 @@ export default function SearchResultsScreen() {
     amenities: filters.amenities.length ? filters.amenities : undefined,
   }), [filters]);
   const results = usePublicPgResults(searchQuery, apiFilters);
-  const items = results.data?.pages.flatMap((page) => page.items) ?? [];
-  const total = results.data?.pages[0]?.total ?? 0;
+  const items = (results.data?.pages.flatMap((page) => page.items) ?? []).filter((item) => {
+    if (filters.pgType.length && item.category && !filters.pgType.includes(item.category)) return false;
+    if (filters.sharing.length > 1 && !item.roomSummary.roomTypes.some((type) => filters.sharing.includes(type))) {
+      return false;
+    }
+    return true;
+  });
+  const total = filters.pgType.length || filters.sharing.length > 1
+    ? items.length
+    : (results.data?.pages[0]?.total ?? items.length);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>

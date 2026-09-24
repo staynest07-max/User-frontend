@@ -43,7 +43,9 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
             <Text variant="caption" color={colors.textSecondary}>Good day</Text>
-            <Text variant="h2" style={{ marginTop: 4 }}>Find your next home</Text>
+            <Text variant="h2" numberOfLines={1} style={styles.title}>
+              Find your next home
+            </Text>
             <View style={styles.cityRow}>
               <MapPin size={14} color={colors.primaryDark} strokeWidth={2} />
               <Text variant="captionMedium" color={colors.primaryDark} style={{ marginLeft: 4 }}>
@@ -148,7 +150,9 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row', paddingHorizontal: spacing['2xl'], paddingTop: spacing.lg,
     alignItems: 'flex-start',
+    gap: spacing.sm,
   },
+  title: { marginTop: 4, fontSize: 22, lineHeight: 28 },
   cityRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm },
   bell: {
     width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surface,

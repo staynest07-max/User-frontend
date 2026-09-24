@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Home, Search, Heart, CalendarDays, User } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,7 +21,8 @@ function TabIcon({
       <Text
         variant="smallMedium"
         color={focused ? colors.primaryDark : colors.textTertiary}
-        style={{ marginTop: 4, fontSize: 11 }}
+        numberOfLines={1}
+        style={styles.tabLabel}
       >
         {label}
       </Text>
@@ -42,13 +43,29 @@ export default function UserTabsLayout() {
           left: spacing.lg,
           right: spacing.lg,
           bottom: Math.max(insets.bottom, spacing.sm),
-          height: 68,
+          height: 72,
           borderRadius: radius['3xl'],
           backgroundColor: colors.glass,
           borderTopWidth: 0,
+          borderTopColor: 'transparent',
+          paddingHorizontal: spacing.xs,
+          paddingTop: 0,
           paddingBottom: 0,
+          elevation: 0,
           ...elevation.nav,
           overflow: 'hidden',
+        },
+        tabBarItemStyle: {
+          flex: 1,
+          height: 72,
+          padding: 0,
+          margin: 0,
+        },
+        tabBarIconStyle: {
+          width: '100%',
+          height: 72,
+          marginTop: 0,
+          marginBottom: 0,
         },
         tabBarBackground: () => (
           <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
@@ -110,5 +127,16 @@ export default function UserTabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  tabItem: { alignItems: 'center', justifyContent: 'center', minWidth: 56 },
+  tabItem: {
+    width: '100%',
+    height: 72,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabLabel: {
+    marginTop: 4,
+    fontSize: 11,
+    lineHeight: 14,
+    textAlign: 'center',
+  },
 });

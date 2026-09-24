@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, ScrollView, Pressable, Share, Dimensions } from 'react-native';
+import { View, StyleSheet, ScrollView, Pressable, Share, Dimensions, Linking } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Share2, MapPin, Heart } from 'lucide-react-native';
+import { ArrowLeft, Share2, MapPin, Heart, Phone } from 'lucide-react-native';
 import {
   Text, Button, PriceText, Badge, Chip, EmptyState, ErrorState, Skeleton,
   colors, spacing, radius, elevation,
@@ -66,6 +66,9 @@ export default function PropertyDetailScreen() {
     );
   }
 
+  const roomRents = pg.rooms.map((room) => room.monthlyRent).filter((value) => value > 0);
+  const startingRent = roomRents.length ? Math.min(...roomRents) : pg.pricing.monthlyRent;
+
   return (
     <View style={styles.root}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing['5xl'] }}>
@@ -110,62 +113,70 @@ export default function PropertyDetailScreen() {
           <View style={styles.location}>
             <MapPin size={15} color={colors.textSecondary} strokeWidth={2} />
             <Text variant="caption" color={colors.textSecondary} style={{ marginLeft: spacing.xs, flex: 1 }}>
-              {[pg.location.address, pg.location.locality, pg.location.city].filter(Boolean).join(', ')}
+              {[pg.location.locality, pg.location.city].filter(Boolean).join(', ')}
             </Text>
           </View>
           {pg.description ? (
-            <Text variant="body" color={colors.textSecondary} style={{ marginTop: spacing.lg }}>{pg.description}</Text>
+            <Text variant="body" color={colors.textSecondary} style={{ marginTop: spacing.lg }}>
+              {pg.description}
+            </Text>
           ) : null}
 
           <Text variant="h4" style={styles.sectionTitle}>Pricing</Text>
           <View style={[styles.card, elevation.soft]}>
-            {[
-              ['Monthly rent', pg.pricing.monthlyRent],
-              ['Security deposit', pg.pricing.deposit],
-              ['Maintenance', pg.pricing.maintenanceCharge],
-              ['Food', pg.pricing.foodCharge],
-            ].filter(([, value]) => value != null && Number(value) > 0).map(([label, value]) => (
-              <View key={String(label)} style={styles.row}>
-                <Text variant="caption" color={colors.textSecondary}>{label}</Text>
-                <Text variant="captionMedium">{formatCurrency(Number(value))}</Text>
+            {startingRent != null ? (
+              <View style={styles.row}>
+                <Text variant="caption" color={colors.textSecondary}>Monthly rent</Text>
+                <Text variant="captionMedium">Starting from {formatCurrency(startingRent)}</Text>
               </View>
-            ))}
+            ) : null}
+            {pg.pricing.deposit > 0 ? (
+              <View style={styles.row}>
+                <Text variant="caption" color={colors.textSecondary}>Security deposit</Text>
+                <Text variant="captionMedium">{formatCurrency(pg.pricing.deposit)}</Text>
+              </View>
+            ) : null}
           </View>
 
-          <Text variant="h4" style={styles.sectionTitle}>Rooms</Text>
+          <Text variant="h4" style={styles.sectionTitle}>Rooms & Availability</Text>
           {pg.rooms.length ? pg.rooms.map((room) => {
             const available = Math.max(0, room.totalBeds - (room.occupiedBeds ?? 0));
             return (
               <View key={room.id} style={[styles.roomCard, elevation.soft]}>
                 <View style={{ flex: 1 }}>
-                  <Text variant="bodySemiBold">{room.roomType}</Text>
-                  <Text variant="caption" color={colors.textSecondary}>
-                    Room {room.roomNumber} · {available} of {room.totalBeds} beds available
+                  <View style={styles.roomTitleRow}>
+                    <Text variant="bodySemiBold" style={{ flex: 1 }}>{room.roomType}</Text>
+                    <PriceText amount={room.monthlyRent} size="small" />
+                  </View>
+                  <Text variant="caption" color={colors.textSecondary} style={{ marginTop: spacing.xs }}>
+                    {available > 0
+                      ? `Room ${room.roomNumber} · ${available} of ${room.totalBeds} beds available`
+                      : `Room ${room.roomNumber} · not available`}
                   </Text>
-                  {room.amenities?.length ? (
-                    <Text variant="small" color={colors.textTertiary}>{room.amenities.join(' · ')}</Text>
-                  ) : null}
+                  {room.amenities?.map((amenity) => (
+                    <Text key={amenity} variant="small" color={colors.textTertiary} style={{ marginTop: spacing.xs }}>
+                      {amenity}
+                    </Text>
+                  ))}
                 </View>
-                <PriceText amount={room.monthlyRent} size="small" />
               </View>
             );
-          }) : (
-            <Text variant="caption" color={colors.textSecondary}>Room information is not available yet.</Text>
-          )}
-
-          <Text variant="h4" style={styles.sectionTitle}>Availability</Text>
-          {pg.availability.length ? pg.availability.map((item) => (
-            <View key={item.id} style={[styles.card, styles.availabilityCard]}>
-              <View>
-                <Text variant="bodySemiBold">{item.roomType}</Text>
-                <Text variant="caption" color={colors.textSecondary}>
-                  {item.availableBeds} of {item.totalBeds} beds available
+          }) : pg.availability.length ? pg.availability.map((item) => (
+            <View key={item.id} style={[styles.roomCard, elevation.soft]}>
+              <View style={{ flex: 1 }}>
+                <View style={styles.roomTitleRow}>
+                  <Text variant="bodySemiBold" style={{ flex: 1 }}>{item.roomType}</Text>
+                  <PriceText amount={item.monthlyRent} size="small" />
+                </View>
+                <Text variant="caption" color={colors.textSecondary} style={{ marginTop: spacing.xs }}>
+                  {item.availableBeds > 0
+                    ? `${item.availableBeds} of ${item.totalBeds} beds available`
+                    : 'not available'}
                 </Text>
               </View>
-              <PriceText amount={item.monthlyRent} size="small" />
             </View>
           )) : (
-            <Text variant="caption" color={colors.textSecondary}>Contact availability will be added soon.</Text>
+            <Text variant="caption" color={colors.textSecondary}>Room information is not available yet.</Text>
           )}
 
           <Text variant="h4" style={styles.sectionTitle}>Amenities</Text>
@@ -174,8 +185,70 @@ export default function PropertyDetailScreen() {
           ) : (
             <Text variant="caption" color={colors.textSecondary}>No amenities have been listed.</Text>
           )}
+
+          {pg.rules.length ? (
+            <>
+              <Text variant="h4" style={styles.sectionTitle}>Rules and regulations</Text>
+              <View style={[styles.card, elevation.soft]}>
+                {pg.rules.map((rule) => (
+                  <Text key={rule} variant="body" color={colors.textSecondary} style={styles.ruleLine}>
+                    {rule}
+                  </Text>
+                ))}
+              </View>
+            </>
+          ) : null}
+
+          <Text variant="h4" style={styles.sectionTitle}>Contact Details</Text>
+          <View style={[styles.card, elevation.soft, styles.contactRow]}>
+            <Text variant="caption" color={colors.textSecondary} style={{ flex: 1 }}>
+              +91 XXXXX XXXXX
+            </Text>
+            <Phone size={18} color={colors.textSecondary} strokeWidth={2} />
+          </View>
+
+          <Text variant="h4" style={styles.sectionTitle}>Location</Text>
+          <View style={styles.fullAddress}>
+            <MapPin size={15} color={colors.textSecondary} strokeWidth={2} />
+            <Text variant="caption" color={colors.textSecondary} style={{ marginLeft: spacing.xs, flex: 1 }}>
+              {pg.location.address || [pg.location.locality, pg.location.city].filter(Boolean).join(', ')}
+            </Text>
+          </View>
+          {pg.location.address || (pg.location.latitude != null && pg.location.longitude != null) ? (
+            <Pressable
+              onPress={() => {
+                const query = pg.location.latitude != null && pg.location.longitude != null
+                  ? `${pg.location.latitude},${pg.location.longitude}`
+                  : encodeURIComponent(pg.location.address);
+                void Linking.openURL(`https://maps.google.com/?q=${query}`);
+              }}
+              hitSlop={8}
+              style={{ marginTop: spacing.sm }}
+            >
+              <Text variant="captionMedium" color={colors.primaryDark}>View on Map →</Text>
+            </Pressable>
+          ) : null}
+
           {saved.isError ? <Text variant="small" color={colors.error}>Could not update saved homes.</Text> : null}
-          <View style={styles.actions}><Button title="Send enquiry" variant="outline" onPress={() => router.push(`/(user)/enquire/${pg.id}`)} style={{ flex: 1 }} /><Button title="Schedule visit" onPress={() => router.push(`/(user)/book-visit/${pg.id}`)} style={{ flex: 1 }} /></View>
+          <View style={styles.actions}>
+            <View style={styles.actionBtn}>
+              <Button
+                title="Send enquiry"
+                variant="outline"
+                fullWidth
+                style={styles.actionButton}
+                onPress={() => router.push(`/(user)/enquire/${pg.id}`)}
+              />
+            </View>
+            <View style={styles.actionBtn}>
+              <Button
+                title="Schedule visit"
+                fullWidth
+                style={styles.actionButton}
+                onPress={() => router.push(`/(user)/book-visit/${pg.id}`)}
+              />
+            </View>
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -200,16 +273,25 @@ const styles = StyleSheet.create({
   dotActive: { width: 18, backgroundColor: colors.surface },
   body: { padding: spacing['2xl'] },
   location: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm },
+  fullAddress: { flexDirection: 'row', alignItems: 'flex-start', marginTop: spacing.sm },
   sectionTitle: { marginTop: spacing['2xl'], marginBottom: spacing.md },
   card: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: spacing.lg },
   row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.sm },
   roomCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface,
+    backgroundColor: colors.surface,
     borderRadius: radius.xl, padding: spacing.lg, marginBottom: spacing.sm,
   },
-  availabilityCard: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm,
-  },
+  roomTitleRow: { flexDirection: 'row', alignItems: 'center' },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap' },
-  actions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing['2xl'] },
+  ruleLine: { paddingVertical: spacing.sm },
+  contactRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    width: '100%',
+    gap: spacing.sm,
+    marginTop: spacing['2xl'],
+  },
+  actionBtn: { flex: 1, minWidth: 0 },
+  actionButton: { paddingHorizontal: spacing.sm },
 });

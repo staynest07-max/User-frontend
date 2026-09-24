@@ -20,6 +20,7 @@ export interface PublicPgListItem {
   publicId: string;
   name: string;
   description: string;
+  category?: PgCategory;
   location: PgLocation;
   coverImage: string | null;
   gallerySummary: { count: number };

@@ -6,6 +6,7 @@ import {
   TextInputProps,
   Pressable,
 } from 'react-native';
+import { Menu } from 'lucide-react-native';
 import { colors, radius, spacing, typography, touchTarget } from '../tokens';
 import { Text } from './Text';
 
@@ -87,38 +88,34 @@ export function SearchBar({
   placeholder?: string;
   showFilter?: boolean;
 }) {
-  const content = (
-    <View style={styles.searchRow}>
-      <View style={styles.searchField}>
-        <Text
-          variant="body"
-          color={value ? colors.textPrimary : colors.textTertiary}
-          numberOfLines={1}
-          style={{ flex: 1 }}
-        >
-          {value || placeholder}
-        </Text>
-      </View>
-      {showFilter ? (
-        <Pressable
-          onPress={onFilterPress}
-          style={styles.filterBtn}
-          accessibilityLabel="Open filters"
-          accessibilityRole="button"
-        >
-          <Text variant="captionMedium" color={colors.primaryDark}>
-            Filters
-          </Text>
-        </Pressable>
-      ) : null}
-    </View>
-  );
+  const filterButton = showFilter ? (
+    <Pressable
+      onPress={onFilterPress}
+      style={styles.filterBtn}
+      accessibilityLabel="Open filters"
+      accessibilityRole="button"
+    >
+      <Menu size={22} color={colors.primaryDark} strokeWidth={2} />
+    </Pressable>
+  ) : null;
 
   if (onPress) {
     return (
-      <Pressable onPress={onPress} accessibilityRole="search">
-        {content}
-      </Pressable>
+      <View style={styles.searchRow}>
+        <Pressable onPress={onPress} style={{ flex: 1 }} accessibilityRole="search">
+          <View style={styles.searchField}>
+            <Text
+              variant="body"
+              color={value ? colors.textPrimary : colors.textTertiary}
+              numberOfLines={1}
+              style={{ flex: 1 }}
+            >
+              {value || placeholder}
+            </Text>
+          </View>
+        </Pressable>
+        {filterButton}
+      </View>
     );
   }
 
@@ -134,20 +131,14 @@ export function SearchBar({
           returnKeyType="search"
         />
       </View>
-      {showFilter ? (
-        <Pressable onPress={onFilterPress} style={styles.filterBtn}>
-          <Text variant="captionMedium" color={colors.primaryDark}>
-            Filters
-          </Text>
-        </Pressable>
-      ) : null}
+      {filterButton}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: spacing.xs },
-  label: { marginBottom: spacing.xs, marginLeft: spacing.xs },
+  wrap: { gap: spacing.sm },
+  label: { marginBottom: 0 },
   field: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -164,10 +155,16 @@ const styles = StyleSheet.create({
     flex: 1,
     ...typography.body,
     color: colors.textPrimary,
-    paddingVertical: spacing.md,
+    paddingVertical: 0,
+    minHeight: touchTarget.min,
+    textAlignVertical: 'center',
   },
-  icon: { marginHorizontal: spacing.xs },
-  meta: { marginLeft: spacing.xs, marginTop: 2 },
+  icon: {
+    marginRight: spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  meta: { marginTop: spacing.xs },
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   searchField: {
     flex: 1,
@@ -191,9 +188,9 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   filterBtn: {
+    width: 56,
+    height: 56,
     backgroundColor: colors.primaryLight,
-    paddingHorizontal: spacing.lg,
-    minHeight: 56,
     borderRadius: radius['2xl'],
     alignItems: 'center',
     justifyContent: 'center',

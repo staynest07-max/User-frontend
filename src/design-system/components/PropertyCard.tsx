@@ -28,8 +28,6 @@ export interface PropertyCardModel {
   distanceKm?: number;
 }
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 interface PropertyCardProps {
   property: PropertyCardModel;
   saved?: boolean;
@@ -53,18 +51,18 @@ export function PropertyCard({
   }));
 
   return (
-    <AnimatedPressable
-      onPress={onPress}
-      onPressIn={() => {
-        scale.value = withSpring(0.985, motion.spring.gentle);
-      }}
-      onPressOut={() => {
-        scale.value = withSpring(1, motion.spring.soft);
-      }}
-      style={[styles.card, elevation.card, anim, compact && styles.compact]}
-      accessibilityRole="button"
-      accessibilityLabel={`${property.name} in ${property.area}, starting ${property.startingRent} per month`}
-    >
+    <Animated.View style={[styles.card, elevation.card, anim, compact && styles.compact]}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={() => {
+          scale.value = withSpring(0.985, motion.spring.gentle);
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1, motion.spring.soft);
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={`${property.name} in ${property.area}, starting ${property.startingRent} per month`}
+      >
       <View style={styles.imageWrap}>
         <Image
           source={property.coverImage ? { uri: property.coverImage } : undefined}
@@ -81,23 +79,6 @@ export function PropertyCard({
               </Text>
             </View>
           ) : null}
-          {onToggleSave ? <Pressable
-            onPress={(e) => {
-              e.stopPropagation?.();
-              onToggleSave?.();
-            }}
-            style={styles.favBtn}
-            hitSlop={8}
-            accessibilityLabel={saved ? 'Remove from saved' : 'Save property'}
-            accessibilityRole="button"
-          >
-            <Heart
-              size={20}
-              color={saved ? colors.favorite : colors.textInverse}
-              fill={saved ? colors.favorite : 'transparent'}
-              strokeWidth={2}
-            />
-          </Pressable> : null}
         </View>
         {property.matchScore ? (
           <View style={styles.match}>
@@ -146,6 +127,25 @@ export function PropertyCard({
           ))}
         </View>
 
+      </View>
+      </Pressable>
+      {onToggleSave ? (
+        <Pressable
+          onPress={onToggleSave}
+          style={styles.favBtnAbs}
+          hitSlop={8}
+          accessibilityLabel={saved ? 'Remove from saved' : 'Save property'}
+          accessibilityRole="button"
+        >
+          <Heart
+            size={20}
+            color={saved ? colors.favorite : colors.textInverse}
+            fill={saved ? colors.favorite : 'transparent'}
+            strokeWidth={2}
+          />
+        </Pressable>
+      ) : null}
+        <View style={[styles.body, { paddingTop: 0 }]}>
         <View style={styles.footer}>
           <View>
             <Text variant="small" color={colors.textTertiary}>
@@ -174,8 +174,8 @@ export function PropertyCard({
             </View>
           ) : null}
         </View>
-      </View>
-    </AnimatedPressable>
+        </View>
+    </Animated.View>
   );
 }
 
@@ -211,13 +211,17 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: radius.chip,
   },
-  favBtn: {
+  favBtnAbs: {
+    position: 'absolute',
+    top: spacing.lg,
+    right: spacing.lg,
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: 'rgba(47,58,53,0.28)',
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 2,
   },
   match: {
     position: 'absolute',

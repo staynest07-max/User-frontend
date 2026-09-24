@@ -95,6 +95,7 @@ export function Button({
           <Text
             variant={size === 'sm' ? 'buttonSmall' : 'button'}
             color={isDisabled ? colors.disabled : variantStyle.text}
+            numberOfLines={1}
             style={leftIcon || rightIcon ? { marginHorizontal: spacing.sm } : undefined}
           >
             {title}

@@ -16,13 +16,8 @@ export function Chip({
   onPress?: () => void;
   icon?: React.ReactNode;
 }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={[styles.chip, selected && styles.chipSelected]}
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-    >
+  const content = (
+    <>
       {icon}
       <Text
         variant="captionMedium"
@@ -31,6 +26,21 @@ export function Chip({
       >
         {label}
       </Text>
+    </>
+  );
+
+  if (!onPress) {
+    return <View style={[styles.chip, selected && styles.chipSelected]}>{content}</View>;
+  }
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.chip, selected && styles.chipSelected]}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+    >
+      {content}
     </Pressable>
   );
 }
@@ -78,10 +88,10 @@ export function BottomSheet({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable
+      <View style={styles.overlay}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Dismiss" />
+        <View
           style={[styles.sheet, { height: sheetH, paddingBottom: insets.bottom + spacing.lg }, elevation.float]}
-          onPress={(e) => e.stopPropagation()}
         >
           <View style={styles.handle} />
           {title ? (
@@ -95,8 +105,8 @@ export function BottomSheet({
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing['3xl'] }}>
             {children}
           </ScrollView>
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 }
