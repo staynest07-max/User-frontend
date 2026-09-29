@@ -8,6 +8,8 @@ export function authErrorMessage(error: unknown): string {
       return 'That code is invalid or has expired. Please try again.';
     case 'VALIDATION_ERROR':
       return error.message;
+    case 'ACCOUNT_EXISTS':
+      return 'An account already exists for this mobile number. Please sign in instead.';
     case 'AUTH_REQUIRED':
     case 'UNAUTHORIZED':
     case 'INVALID_TOKEN':

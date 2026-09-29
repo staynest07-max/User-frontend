@@ -25,5 +25,7 @@ export interface AuthPrincipal {
 export interface RequestOtpInput { phone: string }
 export interface RequestOtpResult { expiresInSeconds: number }
 export interface VerifyOtpInput { phone: string; otp: string }
+export interface SignupRequiredResult { signupRequired: true }
+export interface UserSignupInput { phone: string; otp: string; fullName: string; email?: string | null }
 export interface RefreshSessionInput { refreshToken: string }
 export interface AuthMeResult { principal: AuthPrincipal }
