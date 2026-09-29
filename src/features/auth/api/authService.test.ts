@@ -61,10 +61,36 @@ describe('authService', () => {
   it('verifies OTP, stores the refresh token, and validates /auth/me', async () => {
     mocks.post.mockResolvedValueOnce({ success: true, data: userTokens });
     mocks.get.mockResolvedValueOnce({ success: true, data: { principal } });
-    await expect(authService.verifyOtp('9000000001', '123456')).resolves.toEqual(principal);
+    await expect(authService.verifyOtp('9000000001', '123456')).resolves.toEqual({ kind: 'authenticated', principal });
     expect(mocks.saveRefreshToken).toHaveBeenCalledWith('refresh-token');
     expect(mocks.setAccessToken).toHaveBeenCalledWith('access-token');
     expect(mocks.get).toHaveBeenCalledWith('/auth/me', { skipAuthRefresh: true });
+  });
+
+  it('returns signup-required without creating a local session', async () => {
+    mocks.post.mockResolvedValueOnce({ success: true, data: { signupRequired: true } });
+    await expect(authService.verifyOtp('9999999999', '654321')).resolves.toEqual({ kind: 'signup_required' });
+    expect(mocks.saveRefreshToken).not.toHaveBeenCalled();
+    expect(mocks.setAccessToken).not.toHaveBeenCalled();
+    expect(mocks.get).not.toHaveBeenCalled();
+  });
+
+  it('creates a USER account, stores the normal session, and validates /auth/me', async () => {
+    mocks.post.mockResolvedValueOnce({ success: true, data: userTokens });
+    mocks.get.mockResolvedValueOnce({ success: true, data: { principal } });
+    const input = { phone: '9999999999', otp: '654321', fullName: 'New User', email: 'new@example.com' };
+    await expect(authService.signupUser(input)).resolves.toEqual(principal);
+    expect(mocks.post).toHaveBeenCalledWith('/auth/user-signup', input, { authenticated: false });
+    expect(mocks.saveRefreshToken).toHaveBeenCalledWith('refresh-token');
+    expect(mocks.setAccessToken).toHaveBeenCalledWith('access-token');
+  });
+
+  it('surfaces signup errors and clears partial credentials', async () => {
+    const error = new ApiError('An account already exists for this phone', 'ACCOUNT_EXISTS', 409);
+    mocks.post.mockRejectedValue(error);
+    await expect(authService.signupUser({ phone: '9000000001', otp: '654321', fullName: 'Existing User' })).rejects.toBe(error);
+    expect(mocks.clearAccessToken).toHaveBeenCalled();
+    expect(mocks.clearRefreshToken).toHaveBeenCalled();
   });
 
   it('surfaces invalid OTP and clears any partial credentials', async () => {

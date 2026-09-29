@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { type Href, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, Button, Input, colors, spacing } from '@/design-system';
 import { useRequestOtp } from '@/features/auth/hooks/useAuth';
@@ -75,6 +75,13 @@ export default function LoginScreen() {
           loading={requestOtp.isPending}
           onPress={submit}
         />
+        <Button
+          title="Create a new account"
+          variant="ghost"
+          fullWidth
+          onPress={() => router.push('/(auth)/signup' as Href)}
+          style={styles.signup}
+        />
       </View>
     </KeyboardAvoidingView>
   );
@@ -101,4 +108,5 @@ const styles = StyleSheet.create({
   fieldBlock: {
     marginTop: spacing['3xl'],
   },
+  signup: { marginTop: spacing.sm },
 });

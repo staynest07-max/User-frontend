@@ -51,7 +51,6 @@ export default function UserTabsLayout() {
           paddingHorizontal: spacing.xs,
           paddingTop: 0,
           paddingBottom: 0,
-          elevation: 0,
           ...elevation.nav,
           overflow: 'hidden',
         },

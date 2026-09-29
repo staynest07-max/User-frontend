@@ -6,6 +6,8 @@ import type {
   RefreshSessionInput,
   RequestOtpInput,
   RequestOtpResult,
+  SignupRequiredResult,
+  UserSignupInput,
   VerifyOtpInput,
 } from '@/contracts/auth';
 import { toUserPrincipal } from '@/mappers/auth';
@@ -36,11 +38,25 @@ export const authService = {
     )).data;
   },
 
-  async verifyOtp(phone: string, otp: string): Promise<AuthPrincipal> {
+  async verifyOtp(phone: string, otp: string): Promise<{ kind: 'authenticated'; principal: AuthPrincipal } | { kind: 'signup_required' }> {
     const input: VerifyOtpInput = { phone, otp };
     try {
-      const response = await apiClient.post<AuthTokens, VerifyOtpInput>(
+      const response = await apiClient.post<AuthTokens | SignupRequiredResult, VerifyOtpInput>(
         '/auth/verify-otp', input, { authenticated: false }
+      );
+      if (!('account' in response.data)) return { kind: 'signup_required' };
+      await persistTokens(response.data);
+      return { kind: 'authenticated', principal: await this.getCurrentUser(true) };
+    } catch (error) {
+      await clearLocalCredentials();
+      throw error;
+    }
+  },
+
+  async signupUser(input: UserSignupInput): Promise<AuthPrincipal> {
+    try {
+      const response = await apiClient.post<AuthTokens, UserSignupInput>(
+        '/auth/user-signup', input, { authenticated: false }
       );
       await persistTokens(response.data);
       return await this.getCurrentUser(true);

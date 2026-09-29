@@ -8,10 +8,10 @@ import {
   Platform,
   useWindowDimensions,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, Button, colors, spacing, radius, typography } from '@/design-system';
-import { useRequestOtp, useVerifyOtp } from '@/features/auth/hooks/useAuth';
+import { useRequestOtp, useUserSignup, useVerifyOtp } from '@/features/auth/hooks/useAuth';
 import { authErrorMessage } from '@/features/auth/errors';
 import { isValidIndianPhone, isValidOtp, normalizeIndianPhone } from '@/features/auth/validation';
 
@@ -24,7 +24,7 @@ const CONTENT_MAX = 360;
 const PAGE_GUTTER = 20;
 
 export default function OtpScreen() {
-  const { phone } = useLocalSearchParams<{ phone: string }>();
+  const { phone, mode, fullName, email } = useLocalSearchParams<{ phone: string; mode?: string; fullName?: string; email?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
@@ -34,9 +34,12 @@ export default function OtpScreen() {
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const inputs = useRef<(TextInput | null)[]>([]);
   const verifyOtp = useVerifyOtp();
+  const signup = useUserSignup();
   const resendOtp = useRequestOtp();
 
   const code = otp.join('');
+  const isSignup = mode === 'signup';
+  const pending = verifyOtp.isPending || signup.isPending;
   const valid = isValidIndianPhone(normalizedPhone) && isValidOtp(code);
   const columnWidth = Math.min(windowWidth, CONTENT_MAX);
   const innerWidth = columnWidth - PAGE_GUTTER * 2;
@@ -65,10 +68,23 @@ export default function OtpScreen() {
   };
 
   const verify = () => {
-    if (!valid || verifyOtp.isPending) return;
+    if (!valid || pending) return;
+    if (isSignup) {
+      signup.mutate({ phone: normalizedPhone, otp: code, fullName: String(fullName ?? ''), email: email ? String(email) : null }, {
+        onSuccess: () => {
+          setOtp(Array.from({ length: OTP_LENGTH }, () => ''));
+          router.replace('/(user)/(tabs)');
+        },
+      });
+      return;
+    }
     verifyOtp.mutate({ phone: normalizedPhone, otp: code }, {
-      onSuccess: () => {
+      onSuccess: (result) => {
         setOtp(Array.from({ length: OTP_LENGTH }, () => ''));
+        if (result.kind === 'signup_required') {
+          router.replace(`/(auth)/signup?phone=${encodeURIComponent(normalizedPhone)}` as Href);
+          return;
+        }
         router.replace('/(user)/(tabs)');
       },
     });
@@ -118,7 +134,7 @@ export default function OtpScreen() {
                 onBlur={() => setFocusedIndex((current) => (current === index ? null : current))}
                 keyboardType="number-pad"
                 maxLength={1}
-                editable={!verifyOtp.isPending}
+                editable={!pending}
                 style={[
                   styles.otpBox,
                   { width: boxWidth },
@@ -129,9 +145,9 @@ export default function OtpScreen() {
             ))}
           </View>
 
-          {verifyOtp.error || resendOtp.error ? (
+          {verifyOtp.error || signup.error || resendOtp.error ? (
             <Text variant="small" color={colors.error} style={styles.error} accessibilityRole="alert">
-              {authErrorMessage(verifyOtp.error ?? resendOtp.error)}
+              {authErrorMessage(verifyOtp.error ?? signup.error ?? resendOtp.error)}
             </Text>
           ) : null}
 
@@ -153,8 +169,8 @@ export default function OtpScreen() {
           title="Verify & continue"
           fullWidth
           size="lg"
-          disabled={!valid || verifyOtp.isPending}
-          loading={verifyOtp.isPending}
+          disabled={!valid || pending}
+          loading={pending}
           onPress={verify}
         />
       </View>

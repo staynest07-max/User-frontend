@@ -25,6 +25,17 @@ export function useRequestOtp() {
 export function useVerifyOtp() {
   return useMutation({
     mutationFn: ({ phone, otp }: { phone: string; otp: string }) => authService.verifyOtp(phone, otp),
+    onSuccess: (result) => {
+      if (result.kind !== 'authenticated') return;
+      queryClient.setQueryData(queryKeys.auth.me(), result.principal);
+      useAuthSessionStore.getState().setAuthenticated(result.principal);
+    },
+  });
+}
+
+export function useUserSignup() {
+  return useMutation({
+    mutationFn: authService.signupUser,
     onSuccess: (principal) => {
       queryClient.setQueryData(queryKeys.auth.me(), principal);
       useAuthSessionStore.getState().setAuthenticated(principal);
