@@ -67,6 +67,21 @@ describe('authService', () => {
     expect(mocks.get).toHaveBeenCalledWith('/auth/me', { skipAuthRefresh: true });
   });
 
+  it('accepts the USER principal contract when /auth/me omits optional userId', async () => {
+    const userPrincipal = {
+      accountId: 'account-id', role: 'USER' as const, sessionId: 'session-id',
+    };
+    mocks.post.mockResolvedValueOnce({ success: true, data: userTokens });
+    mocks.get.mockResolvedValueOnce({ success: true, data: { principal: userPrincipal } });
+
+    await expect(authService.verifyOtp('9000000001', '123456')).resolves.toEqual({
+      kind: 'authenticated',
+      principal: userPrincipal,
+    });
+    expect(mocks.saveRefreshToken).toHaveBeenCalledWith('refresh-token');
+    expect(mocks.setAccessToken).toHaveBeenCalledWith('access-token');
+  });
+
   it('returns signup-required without creating a local session', async () => {
     mocks.post.mockResolvedValueOnce({ success: true, data: { signupRequired: true } });
     await expect(authService.verifyOtp('9999999999', '654321')).resolves.toEqual({ kind: 'signup_required' });

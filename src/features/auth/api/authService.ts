@@ -10,7 +10,6 @@ import type {
   UserSignupInput,
   VerifyOtpInput,
 } from '@/contracts/auth';
-import { toUserPrincipal } from '@/mappers/auth';
 import { clearRefreshToken, getRefreshToken, saveRefreshToken } from '@/storage/secureTokens';
 
 function requireUserTokens(tokens: AuthTokens): AuthTokens {
@@ -84,7 +83,10 @@ export const authService = {
 
   async getCurrentUser(skipAuthRefresh = false): Promise<AuthPrincipal> {
     const response = await apiClient.get<AuthMeResult>('/auth/me', { skipAuthRefresh });
-    return toUserPrincipal(response.data.principal);
+    if (response.data.principal.role !== 'USER') {
+      throw new Error('User Mobile requires a backend USER principal');
+    }
+    return response.data.principal;
   },
 
   async logout(): Promise<void> {
