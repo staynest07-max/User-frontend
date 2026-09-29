@@ -31,14 +31,14 @@ async function clearLocalCredentials(): Promise<void> {
 
 export const authService = {
   async requestOtp(phone: string): Promise<RequestOtpResult> {
-    const input: RequestOtpInput = { phone };
+    const input: RequestOtpInput = { phone, role: 'USER' };
     return (await apiClient.post<RequestOtpResult, RequestOtpInput>(
       '/auth/request-otp', input, { authenticated: false }
     )).data;
   },
 
   async verifyOtp(phone: string, otp: string): Promise<{ kind: 'authenticated'; principal: AuthPrincipal } | { kind: 'signup_required' }> {
-    const input: VerifyOtpInput = { phone, otp };
+    const input: VerifyOtpInput = { phone, otp, role: 'USER' };
     try {
       const response = await apiClient.post<AuthTokens | SignupRequiredResult, VerifyOtpInput>(
         '/auth/verify-otp', input, { authenticated: false }

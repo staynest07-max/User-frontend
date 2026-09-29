@@ -22,9 +22,9 @@ export interface AuthPrincipal {
   merchantId?: string;
 }
 
-export interface RequestOtpInput { phone: string }
+export interface RequestOtpInput { phone: string; role: 'USER' }
 export interface RequestOtpResult { expiresInSeconds: number }
-export interface VerifyOtpInput { phone: string; otp: string }
+export interface VerifyOtpInput { phone: string; otp: string; role: 'USER' }
 export interface SignupRequiredResult { signupRequired: true }
 export interface UserSignupInput { phone: string; otp: string; fullName: string; email?: string | null }
 export interface RefreshSessionInput { refreshToken: string }

@@ -48,7 +48,7 @@ describe('authService', () => {
     mocks.post.mockResolvedValue({ success: true, data: { expiresInSeconds: 300 } });
     await expect(authService.requestOtp('9000000001')).resolves.toEqual({ expiresInSeconds: 300 });
     expect(mocks.post).toHaveBeenCalledWith(
-      '/auth/request-otp', { phone: '9000000001' }, { authenticated: false }
+      '/auth/request-otp', { phone: '9000000001', role: 'USER' }, { authenticated: false }
     );
   });
 
@@ -62,6 +62,11 @@ describe('authService', () => {
     mocks.post.mockResolvedValueOnce({ success: true, data: userTokens });
     mocks.get.mockResolvedValueOnce({ success: true, data: { principal } });
     await expect(authService.verifyOtp('9000000001', '123456')).resolves.toEqual({ kind: 'authenticated', principal });
+    expect(mocks.post).toHaveBeenCalledWith(
+      '/auth/verify-otp',
+      { phone: '9000000001', otp: '123456', role: 'USER' },
+      { authenticated: false }
+    );
     expect(mocks.saveRefreshToken).toHaveBeenCalledWith('refresh-token');
     expect(mocks.setAccessToken).toHaveBeenCalledWith('access-token');
     expect(mocks.get).toHaveBeenCalledWith('/auth/me', { skipAuthRefresh: true });
