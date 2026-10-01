@@ -33,7 +33,7 @@ jobs:
 
       - name: Export Expo web app
         env:
-          EXPO_PUBLIC_API_BASE_URL: https://backend-bk0a.onrender.com/api/v1
+          EXPO_PUBLIC_API_BASE_URL: http://192.168.31.19:4000/api/v1ss
         run: |
           npx expo export --platform web
           # GitHub Pages/Jekyll ignores _expo folders unless this file exists.
